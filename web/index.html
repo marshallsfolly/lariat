@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="@SHORT_NAME@">
+<meta name="theme-color" content="@THEME_COLOR@">
+<meta name="color-scheme" content="dark">
+<meta name="format-detection" content="telephone=no">
+<title>@APP_NAME@</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
+<link rel="preload" href="/fonts/@FONT_REGULAR@" as="font" type="@FONT_TYPE@" crossorigin>
+<link rel="stylesheet" href="/palette.css">
+<link rel="stylesheet" href="/vendor/xterm.css">
+<link rel="stylesheet" href="/app.css">
+<script type="module" src="/js/app.js"></script>
+</head>
+<body>
+<div id="app" data-view="boot">
+  <header class="bar" id="bar">
+    <button class="icon" id="back" type="button" aria-label="Back"><span class="nf"></span></button>
+    <div class="heading">
+      <span class="title" id="title">@APP_NAME@</span>
+      <span class="pill" id="term-status" hidden></span>
+      <span class="conn" id="conn"></span>
+    </div>
+    <div class="actions" id="actions">
+      <button class="icon" id="act-herdr" type="button" aria-label="Full herdr" hidden><span class="nf"></span></button>
+      <button class="icon" id="act-tmux" type="button" aria-label="tmux" hidden><span class="nf"></span></button>
+      <button class="icon" id="act-inbox" type="button" aria-label="Inbox" hidden><span class="nf"></span><i class="badge" id="inbox-badge" hidden></i></button>
+      <button class="icon" id="act-new" type="button" aria-label="New" hidden><span class="nf"></span></button>
+      <button class="icon" id="act-menu" type="button" aria-label="Menu" hidden><span class="nf"></span></button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="view" id="view-boot" aria-hidden="true"></section>
+
+    <section class="view" id="view-login">
+      <div class="login-card">
+        <img class="login-icon" src="/icons/icon.svg" width="72" height="72" alt="">
+        <h1 class="login-name">@APP_NAME@</h1>
+        <button class="btn primary wide" id="unlock" type="button"><span class="nf"></span> Unlock</button>
+        <p class="login-msg" id="login-msg">&nbsp;</p>
+        <div class="enroll" id="enroll" hidden>
+          <p class="hint" id="enroll-hint">Enroll this device: scan the QR code from <code>lariat-enroll</code>, or paste the one-time token.</p>
+          <input id="enroll-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="enrollment token">
+          <input id="enroll-label" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="32" placeholder="label (e.g. phone)">
+          <button class="btn wide" id="enroll-go" type="button"><span class="nf"></span> Create passkey</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-dash">
+      <div class="dash" id="dash">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-term">
+      <div class="term-host" id="term-host"></div>
+      <div class="dictation" id="dictation" hidden>
+        <span class="dot"></span>
+        <div class="body"><p id="dictation-text"></p><p class="hint" id="dictation-hint"></p></div>
+        <span class="pausebar"></span>
+      </div>
+      <div class="term-overlay" id="term-overlay" hidden>
+        <p id="term-overlay-msg"></p>
+        <button class="btn" id="term-reconnect" type="button">Reconnect</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="keybar" id="keybar"><div class="keys" id="keys"></div><div class="keys-end" id="keys-end"></div></footer>
+
+  <div class="sheet-root" id="sheet-root"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+</body>
+</html>

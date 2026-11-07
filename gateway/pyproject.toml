@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lariat"
+version = "0.1.0"
+description = "Your coding agents on your phone: a passkey-gated terminal and agent dashboard on your tailnet"
+readme = { text = "See https://github.com/marshallsfolly/lariat", content-type = "text/plain" }
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+  "aiohttp",
+  "cryptography",
+  "segno",
+  "webauthn",
+  "pywinpty; sys_platform == 'win32'",
+]
+
+[project.urls]
+Homepage = "https://github.com/marshallsfolly/lariat"
+
+[project.scripts]
+lariat-gateway = "lariat.__main__:main"
+lariat = "lariat.cli:main"
+
+[tool.setuptools]
+packages = ["lariat", "lariat.providers"]
+
+# The built web app (release builds copy it to lariat/web; Nix serves it from the store).
+[tool.setuptools.package-data]
+lariat = ["web/*", "web/**/*"]

@@ -1,0 +1,150 @@
+# Single-file binaries for Linux, macOS and Windows, and a wheel. The web app
+# is built once with Nix and bundled into each. A v* tag publishes a release.
+name: release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/determinate-nix-action@v3
+      - uses: DeterminateSystems/magic-nix-cache-action@v15
+      - run: |
+          nix build .#web -o web-result
+          cp -rL web-result web
+          chmod -R u+w web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: web
+
+  binaries:
+    needs: web
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-22.04, target: linux-x86_64 }
+          - { os: ubuntu-22.04-arm, target: linux-arm64 }
+          - { os: macos-15, target: macos-arm64 }
+          - { os: macos-15-intel, target: macos-x86_64 }
+          - { os: windows-2022, target: windows-x86_64 }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: web
+          path: gateway/lariat/web
+      - name: Build
+        run: |
+          if [ "${{ matrix.target }}" = macos-x86_64 ]; then
+            # No Intel wheel for cryptography: build it against a static OpenSSL, so it
+            # cannot clash with the libssl PyInstaller bundles for Python's ssl module.
+            OPENSSL_DIR="$(brew --prefix openssl@3)"
+            export OPENSSL_DIR OPENSSL_STATIC=1
+          fi
+          pip install . pyinstaller certifi
+          extra=(--collect-data certifi)  # Mozilla's CAs: the bundled OpenSSL looks for the system's in the build machine's places
+          if [ "$RUNNER_OS" = "Windows" ]; then extra+=(--collect-all winpty); fi
+          pyinstaller --onefile --name lariat --add-data "lariat/web:lariat/web" \
+            --collect-submodules lariat "${extra[@]}" lariat_entry.py
+      - name: Smoke test
+        run: |
+          ./dist/lariat --help
+          ./dist/lariat tls init --host smoke.example.ts.net --state ./smoke-tls
+          ./dist/lariat serve --host localhost --no-tailscale-serve --port 18795 --state ./smoke &
+          for _ in $(seq 60); do curl -sf http://127.0.0.1:18795/auth/info && break; sleep 1; done
+          curl -sf http://127.0.0.1:18795/ | grep -q 'manifest.webmanifest'
+          kill %1 || true
+          ./dist/lariat --version
+          ./dist/lariat doctor --json --state ./smoke > doctor.json || true   # no Tailscale here: some checks fail
+          python -c "import json; d = json.load(open('doctor.json')); assert d['checks'], d"
+          ./dist/lariat service install --dry-run -- --name smoke   # prints, installs nothing
+          ./dist/lariat setup --help > /dev/null
+          ./dist/lariat hooks claude > hooks.json && python -c "import json; json.load(open('hooks.json'))"
+          ./dist/lariat update --check --state ./smoke   # HTTPS to github.com from inside the binary
+      - name: Name it
+        run: |
+          mkdir -p ../out
+          if [ "$RUNNER_OS" = "Windows" ]; then cp dist/lariat.exe "../out/lariat-${{ matrix.target }}.exe"
+          else cp dist/lariat "../out/lariat-${{ matrix.target }}"; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lariat-${{ matrix.target }}
+          path: out/*
+
+  wheel:
+    needs: web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: web
+          path: gateway/lariat/web
+      - run: |
+          pip install build
+          python -m build --wheel --outdir out gateway
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lariat-wheel
+          path: out/*.whl
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [binaries, wheel]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: lariat-*
+          path: out
+          merge-multiple: true
+      - run: |
+          cd out && sha256sum -- * > SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "lariat $GITHUB_REF_NAME" --generate-notes ./*
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  # The one-line installers, against the release just published.
+  installers:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      LARIAT_REPO: ${{ github.repository }}
+      LARIAT_VERSION: ${{ github.ref_name }}
+      LARIAT_NO_SETUP: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - if: runner.os != 'Windows'
+        run: |
+          LARIAT_BIN_DIR="$RUNNER_TEMP/bin" sh install.sh
+          "$RUNNER_TEMP/bin/lariat" --version | grep -F "${GITHUB_REF_NAME#v}"
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:LARIAT_BIN_DIR = "$env:RUNNER_TEMP\bin"
+          ./install.ps1
+          $v = & "$env:RUNNER_TEMP\bin\lariat.exe" --version
+          if ($v -notmatch [regex]::Escape($env:GITHUB_REF_NAME.TrimStart('v'))) { throw "installed $v" }

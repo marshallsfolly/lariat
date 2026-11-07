@@ -1,0 +1,15 @@
+result
+result-*
+__pycache__/
+*.pyc
+node_modules/
+/dev/
+# Release builds copy the built web app here.
+/gateway/lariat/web/
+/gateway/build/
+/gateway/dist/
+*.egg-info/
+# Demo videos are published elsewhere, never committed.
+*.mp4
+*.mov
+*.webm
