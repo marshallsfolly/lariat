@@ -34,7 +34,6 @@ jobs:
           - { os: macos-15, target: macos-arm64 }
           - { os: macos-15-intel, target: macos-x86_64 }
           - { os: windows-2022, target: windows-x86_64 }
-          - { os: windows-11-arm, target: windows-arm64 }
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -130,7 +129,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest, windows-11-arm]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     env:
       LARIAT_REPO: ${{ github.repository }}
@@ -149,8 +148,3 @@ jobs:
           ./install.ps1
           $v = & "$env:RUNNER_TEMP\bin\lariat.exe" --version
           if ($v -notmatch [regex]::Escape($env:GITHUB_REF_NAME.TrimStart('v'))) { throw "installed $v" }
-          # The binary for this CPU: the PE header's machine field (0xAA64 ARM64, 0x8664 x64).
-          $b = [IO.File]::ReadAllBytes("$env:RUNNER_TEMP\bin\lariat.exe")
-          $machine = [BitConverter]::ToUInt16($b, [BitConverter]::ToInt32($b, 0x3C) + 4)
-          $want = if ($env:RUNNER_ARCH -eq 'ARM64') { 0xAA64 } else { 0x8664 }
-          if ($machine -ne $want) { throw ('installed a {0:X4} binary on {1}' -f $machine, $env:RUNNER_ARCH) }

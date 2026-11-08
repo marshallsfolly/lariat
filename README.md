@@ -64,7 +64,7 @@ under **tap the machine name → Add a machine**
 hand**, or to see what each step does: [docs/setup.md](docs/setup.md).
 
 Runs on Linux (x86_64, arm64), macOS (Apple Silicon, Intel) and Windows
-(x86_64, arm64; terminals are PowerShell, no tmux or herdr). The phone needs
+(x86_64; terminals are PowerShell, no tmux or herdr). The phone needs
 passkeys, and for push iOS 16.4+ with the app on the Home Screen. The agent
 dashboard uses [herdr](https://herdr.dev); shells and tmux work without it.
 

@@ -12,9 +12,7 @@ $ProgressPreference = 'SilentlyContinue'  # Invoke-WebRequest is much faster wit
 $repo = if ($env:LARIAT_REPO) { $env:LARIAT_REPO } else { 'marshallsfolly/lariat' }
 $dir = if ($env:LARIAT_BIN_DIR) { $env:LARIAT_BIN_DIR } else { Join-Path $env:LOCALAPPDATA 'Programs\lariat' }
 $base = if ($env:LARIAT_VERSION) { "https://github.com/$repo/releases/download/$($env:LARIAT_VERSION)" } else { "https://github.com/$repo/releases/latest/download" }
-# An x64 PowerShell under emulation reports AMD64 and gets the x86_64 binary, which runs there too.
-$arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'x86_64' }
-$asset = "lariat-windows-$arch.exe"
+$asset = 'lariat-windows-x86_64.exe'
 
 New-Item -ItemType Directory -Force $dir | Out-Null
 $download = Join-Path $dir 'lariat.download.exe'
