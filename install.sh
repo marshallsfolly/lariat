@@ -48,7 +48,9 @@ if command -v sha256sum > /dev/null; then
 else
   got="$(shasum -a 256 "$tmp/$asset" | cut -d' ' -f1)"
 fi
-[ -n "$want" ] && [ "$want" = "$got" ] || die "the download does not match the release's SHA256SUMS; not installed"
+if [ -z "$want" ] || [ "$want" != "$got" ]; then
+  die "the download does not match the release's SHA256SUMS; not installed"
+fi
 
 mkdir -p "$dir"
 chmod 755 "$tmp/$asset"
