@@ -58,9 +58,11 @@ terminal). `SHA256SUMS` in the release has the checksums.
 Windows (PowerShell):
 
 ```powershell
+# windows-x86_64, or windows-arm64 on an ARM PC
+$T = 'windows-x86_64'
 $dir = "$env:LOCALAPPDATA\Programs\lariat"
 New-Item -ItemType Directory -Force $dir | Out-Null
-Invoke-WebRequest https://github.com/marshallsfolly/lariat/releases/latest/download/lariat-windows-x86_64.exe -OutFile "$dir\lariat.exe"
+Invoke-WebRequest "https://github.com/marshallsfolly/lariat/releases/latest/download/lariat-$T.exe" -OutFile "$dir\lariat.exe"
 [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + ";$dir", 'User')
 ```
 

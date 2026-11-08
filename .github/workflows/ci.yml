@@ -1,6 +1,6 @@
-# Every push: the Nix packages on Linux (x86_64, arm64) and macOS, via Determinate
-# Nix (the gateway's tests run in its build), and the test suite on Linux, macOS
-# and Windows with plain Python.
+# Every push: the Nix packages on Linux (x86_64, arm64) and macOS (arm64, Intel),
+# via Determinate Nix (the gateway's tests run in its build), and the test suite
+# with plain Python on every platform with a release binary.
 name: ci
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -22,13 +22,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel, windows-latest, windows-11-arm]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - if: runner.os == 'macOS' && runner.arch == 'X64'
+        # No Intel wheel for cryptography: pip builds it, against Homebrew's OpenSSL.
+        run: echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> "$GITHUB_ENV"
       - run: pip install ./gateway
       - run: python -m unittest discover -s tests -t . -v
         working-directory: gateway

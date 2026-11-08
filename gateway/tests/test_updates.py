@@ -36,6 +36,7 @@ class Versions(unittest.TestCase):
         self.assertEqual(updates.asset_name("linux", "aarch64"), "lariat-linux-arm64")
         self.assertEqual(updates.asset_name("darwin", "arm64"), "lariat-macos-arm64")
         self.assertEqual(updates.asset_name("win32", "AMD64"), "lariat-windows-x86_64.exe")
+        self.assertEqual(updates.asset_name("win32", "ARM64"), "lariat-windows-arm64.exe")
         self.assertIsNone(updates.asset_name("linux", "riscv64"))
 
     def test_default_modes(self):
