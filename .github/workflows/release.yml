@@ -75,7 +75,8 @@ jobs:
           ./dist/lariat service install --dry-run -- --name smoke   # prints, installs nothing
           ./dist/lariat setup --help > /dev/null
           ./dist/lariat hooks claude > hooks.json && python -c "import json; json.load(open('hooks.json'))"
-          ./dist/lariat update --check --state ./smoke   # HTTPS to github.com from inside the binary
+          # HTTPS to github.com from inside the binary; before the first release there is none to find
+          ./dist/lariat update --check --state ./smoke 2> update.err || { cat update.err; grep -q 'no release found' update.err; }
       - name: Name it
         run: |
           mkdir -p ../out
